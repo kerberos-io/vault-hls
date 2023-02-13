@@ -44,7 +44,7 @@ export default class VideoPlayer extends React.Component {
       'Content-Type': 'application/json',
       'X-Kerberos-Storage-Provider': 'xxx', // Kerberos Vault storage provider
       'X-Kerberos-Storage-AccessKey': 'xxx', // Kerberos Vault account access key
-      'X-Kerberos-Storage-SecretAccessKey': 'xxxx', // Kerberos Vault account secret access key
+      'X-Kerberos-Storage-SecretAccessKey': 'xxx', // Kerberos Vault account secret access key
     }
 
     // We will create the m3u8 file in memory, and build it up with the data
@@ -63,6 +63,35 @@ export default class VideoPlayer extends React.Component {
     // we will get the durations, start times, and urls for each segment.
     // This can be used to create an event list, and bring it to the correct time
     // in the video.
+
+    /*
+    The Kerberos Vault API will return following payload from'/hls/metadata'
+    You'll receive a sequence of mp4 files with the total duration of the recording,
+    and the individual durations of each segment. Combining this with the start time of the recording
+    you can avoid drifting, and make sure you can navigate correctly through the stream.
+    [{
+      "key":"1676232722_6-967003_insidegarage_200-200-400-400_0_769.mp4",
+      "filename":"cedricve/1676232722_6-967003_insidegarage_200-200-400-400_0_769.mp4",
+      "timestamp":1676232722,
+      "url":"https://gateway.eu1.storjshare.io/kerberos-hub/cedricve/1676232722_6-967003_insidexxx.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256xxx",
+      "start":0,
+      "end":401.32999999999987,
+      "duration":401.32999999999987,
+      "bytes_ranges":"#EXT-X-MAP:URI=\"1676232722_6-967003_insidegarage_200-200-400-400_0_769.mp4\",BYTERANGE=\"680@0\"\n#EXTINF:19.967000,\n#EXT-X-BYTERANGE:5014474@680\n1676232722_6-...",
+      "bytes_range_on_time":[{"duration":"19.967000","time":"19.967000","range":"5014474@680"},{"duration":"19.967000","time":"39.934000","range"...},
+    },
+    {
+      "key":"1676233123_6-967003_insidegarage_200-200-400-400_0_769.mp4",
+      "filename":"cedricve/1676233123_6-967003_insidegarage_200-200-400-400_0_769.mp4",
+      "timestamp":1676233123,
+      "url":"https://gateway.eu1.storjshare.io/kerberos-hub/cedricve/1676233123_6-967003_insidexxx.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256",
+      "start":401.32999999999987,
+      "end":800.6639999999998,
+      "duration":399.3339999999999,
+      "bytes_ranges":"#EXT-X-MAP:URI=\"1676233123_6-967003_insidegarage_200-200-400-400_0_769.mp4\",BYTERANGE=\"680@0\"\n#EXTINF:19.967000,\n#EXT-X-BYTERANGE:5069836@680\n1676233123_6-...",
+      "bytes_range_on_time":[{"duration":"19.967000","time":"19.967000","range":"5069836@680"},{"duration":"19.967000","time":"39.934000","range"...},
+    }]*/
+
     post(API_URL + '/hls/metadata', JSON.stringify(data), headers).then((data) => {
       this.setState({ items: data });
       data.forEach((item, i) => {
@@ -86,6 +115,8 @@ export default class VideoPlayer extends React.Component {
         src: blob,
         type: 'application/x-mpegURL'
       }];
+
+      // 
       this.player.src(sources);
     });
   }
