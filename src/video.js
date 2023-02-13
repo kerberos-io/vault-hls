@@ -13,10 +13,12 @@ const post = async (url, data, headers) => {
   return response.json();
 }
 
+
 export default class VideoPlayer extends React.Component {
 
   constructor() {
     super();
+    moment.locale('en');
     this.state = {
       items: []
     };
@@ -118,7 +120,47 @@ export default class VideoPlayer extends React.Component {
 
       // 
       this.player.src(sources);
+      this.addCustomTimeDisplay();
     });
+  }
+
+  addCustomTimeDisplay() {
+    // Create a custom TimeDisplay
+    const { items } = this.state;
+
+    // Create a custom DurationDisplay
+    const CustomTimeDisplay = videojs.getComponent('TimeDisplay');
+    const customTimeDisplay = new CustomTimeDisplay(this.player, {
+      el: videojs.createEl('div', {
+        className: 'vjs-custom-time-display vjs-time-control vjs-control',
+      }),
+      data: items
+    });
+
+    // Overwrite the default time display with our custom time display
+    customTimeDisplay.updateContent = function(props) {
+      let time = this.player_.scrubbing() ? this.player_.getCache().currentTime : this.player_.currentTime();
+      // Find start time
+      let startTime = 0;
+      // Iterate over data
+      const { data } = this.options_;
+      data.forEach((item) => {
+        if (time >= item.start && time <= item.end) {
+          startTime = item.timestamp;
+          time = time - item.start;
+        }
+      });
+      const formattedTime = moment.unix(startTime + Math.round(time)).format('MM-DD-YYYY HH:mm:ss');
+      const endTime = data[data.length - 1].timestamp;
+      const endDuration = data[data.length - 1].duration;
+      const formattedEnd = moment.unix(endTime + Math.round(endDuration)).format('MM-DD-YYYY HH:mm:ss');
+      this.el_.innerHTML = `<span class="vjs-control-text">Current Time </span>
+        ${formattedTime} / ${formattedEnd}
+        <span class="vjs-control-text"> seconds</span>`;
+    };
+
+    // Add the custom time display to the player
+    this.player.addChild(customTimeDisplay, {}, 3);
   }
 
   changeTime(time) {
@@ -134,7 +176,6 @@ export default class VideoPlayer extends React.Component {
   }
 
   timestampToTime(timestamp) {
-    moment.locale('en');
     return moment.unix(timestamp).format('MMM Do YYYY, h:mm:ss a');
   }
 
